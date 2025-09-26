@@ -1,12 +1,10 @@
+import json
 from fastapi import FastAPI, Query
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
-import json
-import os
 
 app = FastAPI(title="API de Imóveis")
 
-# Permitir requisições de qualquer lugar (útil para testar no Postman/n8n)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,16 +13,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Carregar a base de imóveis do arquivo JSON
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-json_path = os.path.join(BASE_DIR, "imoveis.json")
-
-try:
-    with open(json_path, "r", encoding="utf-8") as f:
-        imoveis = json.load(f)
-except FileNotFoundError:
-    imoveis = []
-    print("Arquivo imoveis.json não encontrado. A lista de imóveis está vazia.")
+# Lendo o JSON do arquivo
+with open("imoveis.json", "r", encoding="utf-8") as f:
+    imoveis = json.load(f)
 
 @app.get("/imoveis")
 def listar_imoveis(
@@ -42,33 +33,33 @@ def listar_imoveis(
     resultados = imoveis
 
     if uuid:
-        resultados = [i for i in resultados if i.get("uuid") == uuid]
+        resultados = [i for i in resultados if i["uuid"] == uuid]
 
     if bairro:
-        resultados = [i for i in resultados if bairro.lower() in i.get("bairro", "").lower()]
+        resultados = [i for i in resultados if bairro.lower() in i.get("bairro","").lower()]
 
     if tipo_imovel:
-        resultados = [i for i in resultados if tipo_imovel.lower() == i.get("tipo_imovel", "").lower()]
+        resultados = [i for i in resultados if tipo_imovel.lower() == i.get("tipo_imovel","").lower()]
 
     if status:
-        resultados = [i for i in resultados if status.lower() == i.get("status", "").lower()]
+        resultados = [i for i in resultados if status.lower() == i.get("status","").lower()]
 
     if preco_min is not None:
-        resultados = [i for i in resultados if i.get("preco_min", 0) >= preco_min]
+        resultados = [i for i in resultados if i.get("preco_min",0) >= preco_min]
 
     if preco_max is not None:
-        resultados = [i for i in resultados if i.get("preco_max", 0) <= preco_max]
+        resultados = [i for i in resultados if i.get("preco_max",0) <= preco_max]
 
     if m2_min is not None:
-        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("M2", 0) >= m2_min]
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("M2",0) >= m2_min]
 
     if m2_max is not None:
-        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("M2", 0) <= m2_max]
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("M2",0) <= m2_max]
 
     if quartos_min is not None:
-        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("Quarto", 0) >= quartos_min]
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("Quarto",0) >= quartos_min]
 
     if quartos_max is not None:
-        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("Quarto", 0) <= quartos_max]
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("Quarto",0) <= quartos_max]
 
     return {"count": len(resultados), "data": resultados}

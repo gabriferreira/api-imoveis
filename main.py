@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Query
-from typing import Optional, List
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
+import json
+from pathlib import Path
 
 app = FastAPI(title="API de Imóveis")
 
-# Permitir requisições de qualquer lugar (útil para testar no Postman/n8n)
+# Permitir requisições de qualquer lugar (Postman, n8n, etc)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,32 +15,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Base de exemplo (você pode substituir por leitura de JSON real)
-imoveis = [
-    {
-        "uuid": "ac51cb5a-c388-4de3-82df-f406fb0dfdaa",
-        "name": "GS Stay Praia da Costa",
-        "bairro": "Praia da Costa",
-        "tipo_imovel": "Apartamento",
-        "status": "DISPONIVEL",
-        "preco_min": 671073.90,
-        "preco_max": 1105362.83,
-        "detalhe_imovel": {"M2": 24, "Banheiro": 1, "Garagem": 1},
-        "municipio": {"name": "Vila Velha", "uf": "ES"},
-    },
-    {
-        "uuid": "7ae610ad-539f-4d1c-9fc8-af483931bae5",
-        "name": "Verve",
-        "bairro": "Jardim Camburí",
-        "tipo_imovel": "Apartamento",
-        "status": "DISPONIVEL",
-        "preco_min": 1639458.85,
-        "preco_max": 2358206.34,
-        "detalhe_imovel": {"M2": 88, "Quarto": 3, "Suite": 1, "Banheiro": 2, "Garagem": 2},
-        "municipio": {"name": "Vitória", "uf": "ES"},
-    },
-    # adicione mais imóveis aqui
-]
+# Caminho do JSON com os imóveis
+IMOVEIS_FILE = Path(__file__).parent / "imoveis.json"
+
+def carregar_imoveis():
+    if IMOVEIS_FILE.exists():
+        with open(IMOVEIS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
 
 @app.get("/imoveis")
 def listar_imoveis(
@@ -53,6 +37,7 @@ def listar_imoveis(
     quartos_min: Optional[int] = None,
     quartos_max: Optional[int] = None
 ):
+    imoveis = carregar_imoveis()
     resultados = imoveis
 
     if uuid:

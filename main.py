@@ -1,70 +1,88 @@
 from fastapi import FastAPI, Query
-import json
+from typing import Optional, List
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+app = FastAPI(title="API de Imóveis")
 
-# Carrega o JSON com os imóveis
-with open("imoveis.json", "r", encoding="utf-8") as f:
-    imoveis = json.load(f)
+# Permitir requisições de qualquer lugar (útil para testar no Postman/n8n)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Base de exemplo (você pode substituir por leitura de JSON real)
+imoveis = [
+    {
+        "uuid": "ac51cb5a-c388-4de3-82df-f406fb0dfdaa",
+        "name": "GS Stay Praia da Costa",
+        "bairro": "Praia da Costa",
+        "tipo_imovel": "Apartamento",
+        "status": "DISPONIVEL",
+        "preco_min": 671073.90,
+        "preco_max": 1105362.83,
+        "detalhe_imovel": {"M2": 24, "Banheiro": 1, "Garagem": 1},
+        "municipio": {"name": "Vila Velha", "uf": "ES"},
+    },
+    {
+        "uuid": "7ae610ad-539f-4d1c-9fc8-af483931bae5",
+        "name": "Verve",
+        "bairro": "Jardim Camburí",
+        "tipo_imovel": "Apartamento",
+        "status": "DISPONIVEL",
+        "preco_min": 1639458.85,
+        "preco_max": 2358206.34,
+        "detalhe_imovel": {"M2": 88, "Quarto": 3, "Suite": 1, "Banheiro": 2, "Garagem": 2},
+        "municipio": {"name": "Vitória", "uf": "ES"},
+    },
+    # adicione mais imóveis aqui
+]
 
 @app.get("/imoveis")
-def buscar_imoveis(
-    name: str = None,
-    uuid: str = None,
-    modalidade_oferta: str = None,
-    status: str = None,
-    tipo_imovel: str = None,
-    descricao: str = None,
-    detalhe_imovel: str = None,
-    preco_min: float = None,
-    preco_max: float = None,
-    bairro: str = None,
-    bairro_cidade: str = None,
-    prazo_entrega: str = None,
-    site: str = None,
-    municipio: str = None,
-    caracteristicas: str = None,
-    CONDOMINIO: str = None,
-    LOCALIZACAO: str = None,
-    limit: int = 10
+def listar_imoveis(
+    uuid: Optional[str] = None,
+    bairro: Optional[str] = None,
+    tipo_imovel: Optional[str] = None,
+    status: Optional[str] = None,
+    preco_min: Optional[float] = None,
+    preco_max: Optional[float] = None,
+    m2_min: Optional[float] = None,
+    m2_max: Optional[float] = None,
+    quartos_min: Optional[int] = None,
+    quartos_max: Optional[int] = None
 ):
     resultados = imoveis
 
-    # Filtros
-    if name:
-        resultados = [i for i in resultados if name.lower() in str(i.get("name", "")).lower()]
     if uuid:
-        resultados = [i for i in resultados if uuid.lower() in str(i.get("uuid", "")).lower()]
-    if modalidade_oferta:
-        resultados = [i for i in resultados if modalidade_oferta.lower() in str(i.get("modalidade_oferta", "")).lower()]
-    if status:
-        resultados = [i for i in resultados if status.lower() in str(i.get("status", "")).lower()]
-    if tipo_imovel:
-        resultados = [i for i in resultados if tipo_imovel.lower() in str(i.get("tipo_imovel", "")).lower()]
-    if descricao:
-        resultados = [i for i in resultados if descricao.lower() in str(i.get("descricao", "")).lower()]
-    if detalhe_imovel:
-        resultados = [i for i in resultados if detalhe_imovel.lower() in str(i.get("detalhe_imovel", "")).lower()]
-    if preco_min:
-        resultados = [i for i in resultados if i.get("preco_min") is not None and i.get("preco_min") >= preco_min]
-    if preco_max:
-        resultados = [i for i in resultados if i.get("preco_max") is not None and i.get("preco_max") <= preco_max]
-    if bairro:
-        resultados = [i for i in resultados if bairro.lower() in str(i.get("bairro", "")).lower()]
-    if bairro_cidade:
-        resultados = [i for i in resultados if bairro_cidade.lower() in str(i.get("bairro_cidade", "")).lower()]
-    if prazo_entrega:
-        resultados = [i for i in resultados if prazo_entrega.lower() in str(i.get("prazo_entrega", "")).lower()]
-    if site:
-        resultados = [i for i in resultados if site.lower() in str(i.get("site", "")).lower()]
-    if municipio:
-        resultados = [i for i in resultados if municipio.lower() in str(i.get("municipio", "")).lower()]
-    if caracteristicas:
-        resultados = [i for i in resultados if caracteristicas.lower() in str(i.get("caracteristicas", "")).lower()]
-    if CONDOMINIO:
-        resultados = [i for i in resultados if CONDOMINIO.lower() in str(i.get("CONDOMINIO", "")).lower()]
-    if LOCALIZACAO:
-        resultados = [i for i in resultados if LOCALIZACAO.lower() in str(i.get("LOCALIZACAO", "")).lower()]
+        resultados = [i for i in resultados if i["uuid"] == uuid]
 
-    # Limita a quantidade de resultados
-    return resultados[:limit]
+    if bairro:
+        resultados = [i for i in resultados if bairro.lower() in i.get("bairro","").lower()]
+
+    if tipo_imovel:
+        resultados = [i for i in resultados if tipo_imovel.lower() == i.get("tipo_imovel","").lower()]
+
+    if status:
+        resultados = [i for i in resultados if status.lower() == i.get("status","").lower()]
+
+    if preco_min is not None:
+        resultados = [i for i in resultados if i.get("preco_min",0) >= preco_min]
+
+    if preco_max is not None:
+        resultados = [i for i in resultados if i.get("preco_max",0) <= preco_max]
+
+    if m2_min is not None:
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("M2",0) >= m2_min]
+
+    if m2_max is not None:
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("M2",0) <= m2_max]
+
+    if quartos_min is not None:
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("Quarto",0) >= quartos_min]
+
+    if quartos_max is not None:
+        resultados = [i for i in resultados if i.get("detalhe_imovel", {}).get("Quarto",0) <= quartos_max]
+
+    return {"count": len(resultados), "data": resultados}
